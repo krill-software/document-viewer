@@ -1,0 +1,75 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Document Viewer",
+  "version": "0.1.0",
+  "identifier": "software.krill.document-viewer",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Document Viewer",
+        "width": 1200,
+        "height": 820,
+        "minWidth": 720,
+        "minHeight": 540,
+        "decorations": false,
+        "resizable": true,
+        "center": true,
+        "backgroundColor": "#FAFAFF"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "cli": {
+      "description": "A minimal document viewer for Linux",
+      "args": [
+        {
+          "name": "file",
+          "index": 1,
+          "takesValue": true,
+          "description": "Path to a PDF file to open"
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png"
+    ],
+    "category": "Office",
+    "shortDescription": "Document viewer",
+    "longDescription": "A minimal, single-window document viewer for Linux. Open a PDF, read it. Quiet by design.",
+    "fileAssociations": [
+      {
+        "ext": ["pdf"],
+        "name": "PDF",
+        "description": "PDF document",
+        "mimeType": "application/pdf",
+        "role": "Viewer"
+      }
+    ],
+    "linux": {
+      "deb": {
+        "section": "office",
+        "priority": "optional",
+        "desktopTemplate": "main.desktop"
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    }
+  }
+}
