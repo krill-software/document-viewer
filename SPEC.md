@@ -18,7 +18,7 @@ v1 reads PDFs. v2 adds Word.
 | State dir    | `$XDG_STATE_HOME/krill-document-viewer/`    |
 | Lucide icon  | `file-text`                                 |
 
-Convention lives in [STYLE.md](../STYLE.md) → Naming.
+Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/main/STYLE.md) → Naming.
 
 ## Goals
 
