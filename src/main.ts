@@ -1,5 +1,5 @@
 import "@krill-software/desktop-ui/styles";
-import { mountChrome, type MenuDef } from "@krill-software/desktop-ui";
+import { mountChrome } from "@krill-software/desktop-ui";
 
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -422,37 +422,8 @@ async function openViaDialog(): Promise<void> {
 
 // ---- Menus ---------------------------------------------------------
 
-function buildMenus(): MenuDef[] {
-  return [
-    {
-      label: "File",
-      items: [
-        { label: "Open…", shortcut: "Ctrl+O", action: () => void openViaDialog() },
-        { sep: true },
-        { label: "Close window", shortcut: "Ctrl+W", action: () => void getCurrentWindow().close() },
-        { label: "Quit",         shortcut: "Ctrl+Q", action: () => void getCurrentWindow().close() },
-      ],
-    },
-    {
-      label: "View",
-      items: [
-        { label: "Toggle thumbnails", shortcut: "Ctrl+\\", action: () => void toggleSidebar() },
-        { sep: true },
-        { label: "Fullscreen", shortcut: "F", action: () => void toggleFullscreen() },
-      ],
-    },
-    {
-      label: "Go",
-      items: [
-        { label: "Previous page", shortcut: "←",     action: () => goToPage(state.pageNumber - 1) },
-        { label: "Next page",     shortcut: "→",     action: () => goToPage(state.pageNumber + 1) },
-        { sep: true },
-        { label: "First page",    shortcut: "Home",  action: () => goToPage(1) },
-        { label: "Last page",     shortcut: "End",   action: () => goToPage(state.totalPages) },
-      ],
-    },
-  ];
-}
+// Canonical actions are passed inline to mountChrome via the `actions` map.
+// The package owns the labels, shortcuts, and menu placement.
 
 async function toggleFullscreen(): Promise<void> {
   const w = getCurrentWindow();
@@ -462,31 +433,15 @@ async function toggleFullscreen(): Promise<void> {
   requestAnimationFrame(() => rerenderAll());
 }
 
-function installKeybindings() {
+// Esc out of fullscreen — the only app-specific keybinding the package
+// can't cover via the action registry.
+function installFullscreenEscape() {
   window.addEventListener("keydown", (e) => {
-    if (isTextTarget(e.target)) return;
-    const mod = e.ctrlKey || e.metaKey;
-    if (mod && e.key.toLowerCase() === "o") { e.preventDefault(); void openViaDialog(); }
-    else if (mod && (e.key.toLowerCase() === "q" || e.key.toLowerCase() === "w")) {
-      e.preventDefault(); void getCurrentWindow().close();
+    if (e.key === "Escape" && document.body.dataset.fullscreen === "true") {
+      e.preventDefault();
+      void toggleFullscreen();
     }
-    else if (mod && e.key === "\\") { e.preventDefault(); void toggleSidebar(); }
-    else if (!mod && (e.key === "f" || e.key === "F" || e.key === "F11")) {
-      e.preventDefault(); void toggleFullscreen();
-    }
-    else if (!mod && e.key === "Escape" && document.body.dataset.fullscreen === "true") {
-      e.preventDefault(); void toggleFullscreen();
-    }
-    else if (!mod && (e.key === "ArrowLeft"  || e.key === "PageUp"))   { e.preventDefault(); goToPage(state.pageNumber - 1); }
-    else if (!mod && (e.key === "ArrowRight" || e.key === "PageDown")) { e.preventDefault(); goToPage(state.pageNumber + 1); }
-    else if (!mod && e.key === "Home") { e.preventDefault(); goToPage(1); }
-    else if (!mod && e.key === "End")  { e.preventDefault(); goToPage(state.totalPages); }
   }, { capture: true });
-}
-
-function isTextTarget(t: EventTarget | null): boolean {
-  if (!(t instanceof HTMLElement)) return false;
-  return t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
 }
 
 async function installFileDrop() {
@@ -504,7 +459,19 @@ async function installFileDrop() {
 function initChrome() {
   const chrome = mountChrome({
     productName: "Document Viewer",
-    menus: buildMenus(),
+    actions: {
+      "open":           openViaDialog,
+      "fullscreen":     toggleFullscreen,
+      "toggle-sidebar": toggleSidebar,
+      "previous":       () => goToPage(state.pageNumber - 1),
+      "next":           () => goToPage(state.pageNumber + 1),
+      "first":          () => goToPage(1),
+      "last":           () => goToPage(state.totalPages),
+    },
+    bindings: {
+      "PageUp":   () => goToPage(state.pageNumber - 1),
+      "PageDown": () => goToPage(state.pageNumber + 1),
+    },
     showStatusLine: true,
   });
   titleEl = chrome.title;
@@ -578,7 +545,7 @@ window.addEventListener("resize", () => {
 
 async function boot() {
   initChrome();
-  installKeybindings();
+  installFullscreenEscape();
   await installFileDrop();
 
   try {
