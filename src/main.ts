@@ -1,3 +1,6 @@
+import "@krill-software/desktop-ui/styles";
+import { mountChrome, type MenuDef } from "@krill-software/desktop-ui";
+
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -8,8 +11,6 @@ import * as pdfjsLib from "pdfjs-dist";
 import { TextLayer } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-
-import { installMenuBar, type MenuDef } from "./menu";
 
 interface DocumentRead {
   path: string;
@@ -23,37 +24,37 @@ interface AppState {
   panel_visible?: boolean;
 }
 
-const pagesEl = document.getElementById("pages") as HTMLElement;
-const viewportEl = document.getElementById("viewport") as HTMLElement;
-const sidebarEl = document.getElementById("sidebar")!;
-const titleEl = document.getElementById("titlebar-title")!;
-const positionEl = document.getElementById("status-position")!;
-const errorName = document.getElementById("error-name")!;
+// ---- DOM refs (assigned in initChrome) -------------------------------
+
+let titleEl: HTMLElement;
+let positionEl: HTMLElement;
+let viewportEl: HTMLElement;
+let pagesEl: HTMLElement;
+let sidebarEl: HTMLElement;
+let errorName: HTMLElement;
+
+// ---- Doc state -------------------------------------------------------
 
 interface DocState {
   doc: pdfjsLib.PDFDocumentProxy | null;
   path: string;
-  pageNumber: number;     // currently most-visible page
+  pageNumber: number;
   totalPages: number;
 }
 const state: DocState = { doc: null, path: "", pageNumber: 1, totalPages: 0 };
 
-// pageRows[i] is the .page-row element for page (i+1).
 let pageRows: HTMLElement[] = [];
-// Aspect ratio (width/height) per page; populated on first render of each page.
 const pageAspect = new Map<number, number>();
-// Pages whose canvas has been rendered.
 const rendered = new Set<number>();
-// In-flight render tasks per page, so we can cancel them on resize.
 const inFlight = new Map<number, pdfjsLib.RenderTask>();
 
-// ---- Display state -----------------------------------------------------
+// ---- Display state ---------------------------------------------------
 
 type Display = "empty" | "document" | "error";
 function setDisplay(s: Display) {
   document.body.dataset.state = s;
   if (s !== "document") {
-    titleEl.textContent = "";
+    titleEl.textContent = "Document Viewer";
     positionEl.textContent = "";
     teardownDocument();
   }
@@ -64,16 +65,9 @@ function basename(path: string): string {
   return i >= 0 ? path.slice(i + 1) : path;
 }
 
-// ---- Continuous-scroll page rendering --------------------------------
+// ---- Page rendering (continuous scroll) ------------------------------
 
-const renderObserver = new IntersectionObserver((entries) => {
-  for (const entry of entries) {
-    if (!entry.isIntersecting) continue;
-    const row = entry.target as HTMLElement;
-    const n = parseInt(row.dataset.page!, 10);
-    if (!rendered.has(n)) void renderPage(n);
-  }
-}, { root: null /* viewport scroll root applied below */, rootMargin: "600px" });
+let renderObserver!: IntersectionObserver;
 
 async function buildPages(doc: pdfjsLib.PDFDocumentProxy): Promise<void> {
   pagesEl.replaceChildren();
@@ -83,8 +77,7 @@ async function buildPages(doc: pdfjsLib.PDFDocumentProxy): Promise<void> {
   for (const t of inFlight.values()) { try { t.cancel(); } catch { /* ignore */ } }
   inFlight.clear();
 
-  // Pre-fetch page 1's metadata to get a default aspect ratio for layout.
-  let defaultAspect = 8.5 / 11; // letter, fallback
+  let defaultAspect = 8.5 / 11;
   try {
     const p1 = await doc.getPage(1);
     const v = p1.getViewport({ scale: 1 });
@@ -102,29 +95,24 @@ async function buildPages(doc: pdfjsLib.PDFDocumentProxy): Promise<void> {
     pageRows.push(row);
     renderObserver.observe(row);
   }
-
-  // Initial render pass + active-page resolve happen as IntersectionObserver fires.
 }
 
 function teardownDocument() {
   for (const t of inFlight.values()) { try { t.cancel(); } catch { /* ignore */ } }
   inFlight.clear();
-  for (const row of pageRows) renderObserver.unobserve(row);
+  for (const row of pageRows) renderObserver?.unobserve(row);
   pageRows = [];
   rendered.clear();
   pageAspect.clear();
-  pagesEl.replaceChildren();
+  pagesEl?.replaceChildren();
 }
 
-/** Compute the on-screen CSS width for a page-row given current viewport size. */
 function targetCssWidth(): number {
-  // Viewport content area minus left+right padding (16px each).
   return Math.max(160, viewportEl.clientWidth - 32);
 }
 
 function sizeRowToViewport(row: HTMLElement) {
-  const w = targetCssWidth();
-  row.style.width = `${w}px`;
+  row.style.width = `${targetCssWidth()}px`;
 }
 
 async function renderPage(n: number): Promise<void> {
@@ -132,7 +120,7 @@ async function renderPage(n: number): Promise<void> {
   const row = pageRows[n - 1];
   if (!row) return;
 
-  rendered.add(n); // claim ownership early so we don't double-render
+  rendered.add(n);
 
   let page: pdfjsLib.PDFPageProxy;
   try {
@@ -143,7 +131,6 @@ async function renderPage(n: number): Promise<void> {
   }
   if (!state.doc) { rendered.delete(n); return; }
 
-  // Update the row's aspect ratio if this is the first time we've seen the page.
   const baseViewport = page.getViewport({ scale: 1 });
   const aspect = baseViewport.width / baseViewport.height;
   if (pageAspect.get(n) !== aspect) {
@@ -151,8 +138,6 @@ async function renderPage(n: number): Promise<void> {
     row.style.aspectRatio = `${aspect}`;
   }
 
-  // Two viewports: one in CSS units (for text layer + canvas display), and one
-  // dpr-scaled (for the canvas's internal pixel buffer).
   const dpr = window.devicePixelRatio || 1;
   const cssW = row.clientWidth || targetCssWidth();
   const cssH = cssW / aspect;
@@ -190,7 +175,6 @@ async function renderPage(n: number): Promise<void> {
     if (inFlight.get(n) === task) inFlight.delete(n);
   }
 
-  // Text layer (transparent, positioned spans for native selection / copy).
   await renderTextLayer(page, row, cssViewport);
 }
 
@@ -226,16 +210,14 @@ async function renderTextLayer(
   }
 }
 
-/** Re-render every page that's currently rendered, at the new fit-width. */
 function rerenderAll() {
   for (const row of pageRows) sizeRowToViewport(row);
-  // Keep the rendered set; just kick a re-render for each.
   const toRerender = Array.from(rendered);
   rendered.clear();
   for (const n of toRerender) void renderPage(n);
 }
 
-// ---- Active-page tracking via scroll ---------------------------------
+// ---- Active-page tracking -------------------------------------------
 
 let scrollRaf = 0;
 
@@ -261,15 +243,7 @@ function recomputeActivePage() {
   }
 }
 
-viewportEl.addEventListener("scroll", () => {
-  if (scrollRaf) return;
-  scrollRaf = requestAnimationFrame(() => {
-    scrollRaf = 0;
-    recomputeActivePage();
-  });
-}, { passive: true });
-
-// ---- Sidebar (page thumbnails) ----------------------------------------
+// ---- Sidebar (thumbnails) -------------------------------------------
 
 const THUMB_CSS_WIDTH = 110;
 
@@ -301,7 +275,7 @@ function buildSidebar() {
       <div class="thumb-canvas-holder"><canvas class="thumb-canvas"></canvas></div>
       <div class="thumb-label">${i}</div>
     `;
-    btn.addEventListener("click", () => void goToPage(i));
+    btn.addEventListener("click", () => goToPage(i));
     sidebarEl.appendChild(btn);
     thumbObserver.observe(btn);
   }
@@ -351,7 +325,7 @@ function setSidebarActive(n: number) {
   }
 }
 
-// ---- Navigation -------------------------------------------------------
+// ---- Navigation -----------------------------------------------------
 
 function goToPage(n: number): void {
   if (!state.doc) return;
@@ -359,17 +333,15 @@ function goToPage(n: number): void {
   const row = pageRows[n - 1];
   if (!row) return;
   row.scrollIntoView({ behavior: "smooth", block: "start" });
-  // recomputeActivePage will fire on the resulting scroll event.
 }
 
-// ---- Sidebar visibility ----------------------------------------------
+// ---- Sidebar visibility --------------------------------------------
 
 let sidebarVisible = true;
 
 function applySidebarVisibility(visible: boolean) {
   sidebarVisible = visible;
   document.body.dataset.sidebar = visible ? "visible" : "hidden";
-  // Layout changed — re-render every page at the new fit-width on next frame.
   requestAnimationFrame(() => rerenderAll());
 }
 
@@ -384,7 +356,7 @@ async function toggleSidebar(): Promise<void> {
   }
 }
 
-// ---- Title bar / window controls --------------------------------------
+// ---- Title / load --------------------------------------------------
 
 function updateTitleBar(name: string) {
   titleEl.textContent = name;
@@ -436,7 +408,6 @@ async function openPath(path: string): Promise<void> {
   updateTitleBar(basename(res.path));
   await buildPages(doc);
   buildSidebar();
-  // Scroll to the top so we start on page 1.
   viewportEl.scrollTop = 0;
 }
 
@@ -448,6 +419,8 @@ async function openViaDialog(): Promise<void> {
   });
   if (typeof selected === "string") await openPath(selected);
 }
+
+// ---- Menus ---------------------------------------------------------
 
 function buildMenus(): MenuDef[] {
   return [
@@ -489,20 +462,6 @@ async function toggleFullscreen(): Promise<void> {
   requestAnimationFrame(() => rerenderAll());
 }
 
-function installTitlebar() {
-  const w = getCurrentWindow();
-  const bind = (id: string, h: () => void | Promise<void>) => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("click", (e) => { e.preventDefault(); void h(); });
-  };
-  bind("titlebar-min", () => w.minimize());
-  bind("titlebar-max", async () => (await w.isMaximized()) ? w.unmaximize() : w.maximize());
-  bind("titlebar-close", () => w.close());
-  document.getElementById("titlebar-drag")?.addEventListener("dblclick", async () =>
-    (await w.isMaximized()) ? w.unmaximize() : w.maximize(),
-  );
-}
-
 function installKeybindings() {
   window.addEventListener("keydown", (e) => {
     if (isTextTarget(e.target)) return;
@@ -540,6 +499,74 @@ async function installFileDrop() {
   });
 }
 
+// ---- Init / boot ---------------------------------------------------
+
+function initChrome() {
+  const chrome = mountChrome({
+    productName: "Document Viewer",
+    menus: buildMenus(),
+    showStatusLine: true,
+  });
+  titleEl = chrome.title;
+  viewportEl = chrome.viewport;
+
+  // Sidebar lives next to the viewport — grid handles positioning.
+  sidebarEl = document.createElement("aside");
+  sidebarEl.id = "sidebar";
+  sidebarEl.setAttribute("aria-label", "Pages");
+  document.body.appendChild(sidebarEl);
+
+  // Pages container + empty / error states inside the viewport.
+  pagesEl = document.createElement("div");
+  pagesEl.id = "pages";
+  viewportEl.appendChild(pagesEl);
+
+  const emptyDiv = document.createElement("div");
+  emptyDiv.id = "empty-state";
+  emptyDiv.innerHTML = `
+    <p>No document open.</p>
+    <p class="hint">Drop a PDF here, or press <kbd>Ctrl</kbd>+<kbd>O</kbd>.</p>
+  `;
+  viewportEl.appendChild(emptyDiv);
+
+  const errorDiv = document.createElement("div");
+  errorDiv.id = "error-state";
+  errorDiv.hidden = true;
+  errorDiv.innerHTML = `
+    <p>Can't open this PDF.</p>
+    <p class="hint" id="error-name"></p>
+  `;
+  viewportEl.appendChild(errorDiv);
+  errorName = errorDiv.querySelector("#error-name") as HTMLElement;
+
+  // Status line: a single right-aligned mono position counter.
+  positionEl = document.createElement("span");
+  positionEl.id = "status-position";
+  positionEl.classList.add("right", "mono");
+  chrome.statusLine!.appendChild(positionEl);
+
+  // The IntersectionObserver for lazy page rendering needs viewportEl as its
+  // root. We set it up here once viewportEl is known.
+  renderObserver = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const row = entry.target as HTMLElement;
+      const n = parseInt(row.dataset.page!, 10);
+      if (!rendered.has(n)) void renderPage(n);
+    }
+  }, { root: viewportEl, rootMargin: "600px" });
+
+  viewportEl.addEventListener("scroll", () => {
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(() => {
+      scrollRaf = 0;
+      recomputeActivePage();
+    });
+  }, { passive: true });
+
+  document.body.dataset.state = "empty";
+}
+
 let resizeRaf = 0;
 window.addEventListener("resize", () => {
   if (resizeRaf) cancelAnimationFrame(resizeRaf);
@@ -550,9 +577,7 @@ window.addEventListener("resize", () => {
 });
 
 async function boot() {
-  installTitlebar();
-  const menuContainer = document.getElementById("menu-bar");
-  if (menuContainer) installMenuBar(menuContainer, buildMenus());
+  initChrome();
   installKeybindings();
   await installFileDrop();
 

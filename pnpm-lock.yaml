@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@krill-software/desktop-ui':
+        specifier: github:krill-software/desktop-ui#v0.1.1
+        version: https://codeload.github.com/krill-software/desktop-ui/tar.gz/c30a9d28afa102fe08412d9cf820ea67e7037c57(@tauri-apps/api@2.11.0)
       '@tauri-apps/api':
         specifier: ^2.1.1
         version: 2.11.0
@@ -173,6 +176,12 @@ packages:
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
+
+  '@krill-software/desktop-ui@https://codeload.github.com/krill-software/desktop-ui/tar.gz/c30a9d28afa102fe08412d9cf820ea67e7037c57':
+    resolution: {tarball: https://codeload.github.com/krill-software/desktop-ui/tar.gz/c30a9d28afa102fe08412d9cf820ea67e7037c57}
+    version: 0.1.0
+    peerDependencies:
+      '@tauri-apps/api': ^2.0.0
 
   '@napi-rs/canvas-android-arm64@0.1.100':
     resolution: {integrity: sha512-hjhCKhntPv9+t4ckHymdx0phYNcVW+GKQR6Lzw2zE+pOVjOplSmtx9nNNknTjbEDLcuLZqA1y8ufKg1XfgftzQ==}
@@ -619,6 +628,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.21.5':
     optional: true
+
+  '@krill-software/desktop-ui@https://codeload.github.com/krill-software/desktop-ui/tar.gz/c30a9d28afa102fe08412d9cf820ea67e7037c57(@tauri-apps/api@2.11.0)':
+    dependencies:
+      '@tauri-apps/api': 2.11.0
 
   '@napi-rs/canvas-android-arm64@0.1.100':
     optional: true

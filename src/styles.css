@@ -1,25 +1,7 @@
-:root {
-  --fm-bg: #FAFAFF;
-  --fm-text: #30343F;
-  --fm-muted: #878472;
-  --fm-accent: #DD7596;
-  --fm-accent-strong: #FF82BF;
-  --fm-rule: rgba(48, 52, 63, 0.08);
-  --fm-rule-strong: rgba(48, 52, 63, 0.16);
-}
+/* document-viewer — app-specific styles. Palette + chrome + menu + status
+ * line + kbd come from @krill-software/desktop-ui (imported in main.ts). */
 
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  height: 100%;
-  background: var(--fm-bg);
-  color: var(--fm-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 13px;
-  user-select: none;
-  overflow: hidden;
-}
+/* Body grid: titlebar / [sidebar?] [viewport] / status line. */
 
 body {
   display: grid;
@@ -44,89 +26,14 @@ body:not([data-state="document"][data-sidebar="visible"]) #sidebar { display: no
 #viewport     { grid-area: main;   }
 #status-line  { grid-area: status; }
 
-button { font-family: inherit; }
-kbd {
-  font-family: ui-monospace, "JetBrains Mono", monospace;
-  font-size: 11px;
-  background: var(--fm-bg);
-  border: 1px solid var(--fm-rule-strong);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  padding: 1px 6px;
-  color: var(--fm-text);
+/* Fullscreen — package hides titlebar + status line; we hide the sidebar
+ * and collapse the grid to a single area. */
+body[data-fullscreen="true"] #sidebar { display: none; }
+body[data-fullscreen="true"] {
+  grid-template-columns: 1fr;
+  grid-template-areas: "main";
+  grid-template-rows: 1fr;
 }
-
-/* Titlebar ============================================================== */
-
-#titlebar {
-  display: flex;
-  align-items: stretch;
-  height: 32px;
-  background: var(--fm-bg);
-  border-bottom: 1px solid var(--fm-rule);
-}
-
-#menu-bar { display: flex; align-items: stretch; padding: 0 4px; }
-
-.menu-trigger {
-  background: transparent;
-  border: 0;
-  color: var(--fm-text);
-  padding: 0 10px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.menu-trigger:hover, .menu-trigger[data-open="true"] { background: var(--fm-rule); }
-
-.menu-dropdown {
-  position: fixed;
-  z-index: 100;
-  background: var(--fm-bg);
-  border: 1px solid var(--fm-rule-strong);
-  box-shadow: 0 8px 24px rgba(48, 52, 63, 0.12);
-  border-radius: 6px;
-  padding: 4px;
-  min-width: 220px;
-}
-.menu-item {
-  display: flex; justify-content: space-between; align-items: center; gap: 24px;
-  width: 100%; text-align: left;
-  background: transparent; border: 0; color: var(--fm-text);
-  padding: 6px 10px; font-size: 12px; border-radius: 4px;
-  cursor: pointer;
-}
-.menu-item:hover { background: var(--fm-rule); }
-.menu-item-shortcut { color: var(--fm-muted); font-size: 11px; }
-.menu-separator { height: 1px; background: var(--fm-rule); margin: 4px 0; }
-
-#titlebar-drag {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-}
-#titlebar-title {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 12px;
-  color: var(--fm-text);
-  pointer-events: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: calc(100% - 24px);
-}
-
-#titlebar-controls { display: flex; }
-#titlebar-controls button {
-  width: 36px;
-  background: transparent; border: 0;
-  color: var(--fm-muted);
-  cursor: pointer;
-}
-#titlebar-controls button:hover { color: var(--fm-text); background: var(--fm-rule); }
-#titlebar-close:hover { background: var(--fm-accent); color: var(--fm-bg); }
 
 /* Viewport ============================================================== */
 
@@ -140,6 +47,15 @@ kbd {
   scrollbar-width: thin;
   scrollbar-color: var(--fm-rule-strong) transparent;
 }
+#viewport::-webkit-scrollbar { width: 10px; height: 10px; }
+#viewport::-webkit-scrollbar-track { background: transparent; }
+#viewport::-webkit-scrollbar-thumb {
+  background: var(--fm-rule-strong);
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+#viewport::-webkit-scrollbar-thumb:hover { background: var(--fm-muted); background-clip: content-box; }
 
 #pages {
   display: flex;
@@ -164,9 +80,7 @@ kbd {
   height: 100%;
 }
 
-/* PDF.js text layer — positioned spans overlaying the canvas. Spans are
- * transparent; selection highlights show through to the rendered canvas
- * underneath, giving native copy-paste support. */
+/* PDF.js text layer — transparent positioned spans for native selection. */
 .textLayer {
   position: absolute;
   inset: 0;
@@ -180,7 +94,6 @@ kbd {
   user-select: text;
   z-index: 2;
 }
-
 .textLayer :is(span, br) {
   color: transparent;
   position: absolute;
@@ -188,12 +101,7 @@ kbd {
   cursor: text;
   transform-origin: 0% 0%;
 }
-
-.textLayer span.markedContent {
-  top: 0;
-  height: 0;
-}
-
+.textLayer span.markedContent { top: 0; height: 0; }
 .textLayer .endOfContent {
   display: block;
   position: absolute;
@@ -204,31 +112,31 @@ kbd {
 }
 .textLayer.selecting .endOfContent { top: 0; }
 
-/* Selection: alpha-derived from --fm-accent (Shimmering Blush) so canvas
- * text stays readable through the highlight. */
+/* Selection: alpha-derived from --fm-accent so canvas text reads through. */
 .textLayer ::selection {
   background: rgba(221, 117, 150, 0.35);
   color: transparent;
 }
-#viewport::-webkit-scrollbar { width: 10px; height: 10px; }
-#viewport::-webkit-scrollbar-track { background: transparent; }
-#viewport::-webkit-scrollbar-thumb {
-  background: var(--fm-rule-strong);
-  border-radius: 5px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-#viewport::-webkit-scrollbar-thumb:hover { background: var(--fm-muted); background-clip: content-box; }
 
-/* Fullscreen — hide chrome. */
-body[data-fullscreen="true"] #titlebar,
-body[data-fullscreen="true"] #status-line,
-body[data-fullscreen="true"] #sidebar { display: none; }
-body[data-fullscreen="true"] {
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "main";
-  grid-template-rows: 1fr;
+body:not([data-state="document"]) #pages { display: none; }
+body:not([data-state="empty"]) #empty-state { display: none; }
+body:not([data-state="error"]) #error-state { display: none; }
+
+#empty-state, #error-state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--fm-muted);
+  font-size: 14px;
+  padding: 0 32px;
+  pointer-events: none;
+}
+#empty-state p, #error-state p { margin: 4px 0; }
+#empty-state .hint, #error-state .hint {
+  font-size: 12px;
+  color: var(--fm-muted);
 }
 
 /* Sidebar (page thumbnails) =========================================== */
@@ -295,42 +203,4 @@ body[data-fullscreen="true"] {
   font-size: 11px;
   font-family: ui-monospace, "JetBrains Mono", monospace;
   margin-top: 4px;
-}
-
-/* Status line ========================================================== */
-
-#status-line {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 4px 12px;
-  background: var(--fm-bg);
-  border-top: 1px solid var(--fm-rule);
-  color: var(--fm-muted);
-  font-size: 11px;
-  height: 24px;
-}
-#status-position {
-  font-family: ui-monospace, "JetBrains Mono", monospace;
-}
-
-body:not([data-state="document"]) #pages { display: none; }
-body:not([data-state="empty"]) #empty-state { display: none; }
-body:not([data-state="error"]) #error-state { display: none; }
-
-#empty-state, #error-state {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: var(--fm-muted);
-  font-size: 14px;
-  padding: 0 32px;
-  pointer-events: none;
-}
-#empty-state p, #error-state p { margin: 4px 0; }
-#empty-state .hint, #error-state .hint {
-  font-size: 12px;
-  color: var(--fm-muted);
 }
