@@ -27,11 +27,13 @@ interface AppState {
 // ---- DOM refs (assigned in initChrome) -------------------------------
 
 let titleEl: HTMLElement;
-let positionEl: HTMLElement;
+let infoEl: HTMLElement;     // status-info (file identity)
+let stateEl: HTMLElement;    // status-state (page position)
 let viewportEl: HTMLElement;
 let pagesEl: HTMLElement;
-let sidebarEl: HTMLElement;
+let sidebarEl: HTMLElement;  // bound to chrome.aux
 let errorName: HTMLElement;
+let docByteSize = 0;
 
 // ---- Doc state -------------------------------------------------------
 
@@ -55,9 +57,16 @@ function setDisplay(s: Display) {
   document.body.dataset.state = s;
   if (s !== "document") {
     titleEl.textContent = "Document Viewer";
-    positionEl.textContent = "";
+    infoEl.replaceChildren();
+    stateEl.replaceChildren();
     teardownDocument();
   }
+}
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function basename(path: string): string {
@@ -239,13 +248,14 @@ function recomputeActivePage() {
   if (bestN !== state.pageNumber) {
     state.pageNumber = bestN;
     setSidebarActive(bestN);
-    positionEl.textContent = `${bestN} / ${state.totalPages}`;
+    stateEl.textContent = `${bestN} / ${state.totalPages}`;
   }
 }
 
 // ---- Sidebar (thumbnails) -------------------------------------------
 
-const THUMB_CSS_WIDTH = 110;
+// 260px aux pane minus 16px padding minus 12px thumb-row inner padding.
+const THUMB_CSS_WIDTH = 220;
 
 const thumbObserver = new IntersectionObserver((entries) => {
   for (const entry of entries) {
@@ -335,21 +345,22 @@ function goToPage(n: number): void {
   row.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ---- Sidebar visibility --------------------------------------------
+// ---- Aux pane visibility (driven by body[data-aux]) -----------------
 
-let sidebarVisible = true;
+function isAuxVisible(): boolean {
+  return document.body.dataset.aux === "visible";
+}
 
-function applySidebarVisibility(visible: boolean) {
-  sidebarVisible = visible;
-  document.body.dataset.sidebar = visible ? "visible" : "hidden";
+function applyAuxVisibility(visible: boolean) {
+  document.body.dataset.aux = visible ? "visible" : "hidden";
   requestAnimationFrame(() => rerenderAll());
 }
 
 async function toggleSidebar(): Promise<void> {
-  applySidebarVisibility(!sidebarVisible);
+  applyAuxVisibility(!isAuxVisible());
   try {
     const current = (await invoke<AppState | null>("load_state")) ?? {};
-    current.panel_visible = sidebarVisible;
+    current.panel_visible = isAuxVisible();
     await invoke("save_state", { state: current });
   } catch (e) {
     console.warn("save_state failed:", e);
@@ -360,7 +371,10 @@ async function toggleSidebar(): Promise<void> {
 
 function updateTitleBar(name: string) {
   titleEl.textContent = name;
-  positionEl.textContent = `${state.pageNumber} / ${state.totalPages}`;
+  // Status line halves: identity (left), position (right).
+  infoEl.textContent = `PDF · ${formatBytes(docByteSize)} · ${state.totalPages} ${state.totalPages === 1 ? "page" : "pages"}`;
+  stateEl.textContent = `${state.pageNumber} / ${state.totalPages}`;
+  stateEl.classList.add("mono");
   const title = `${name} — Document Viewer`;
   document.title = title;
   getCurrentWindow().setTitle(title).catch(() => {});
@@ -382,6 +396,7 @@ async function openPath(path: string): Promise<void> {
   }
 
   const bytes = res.bytes instanceof Uint8Array ? res.bytes : new Uint8Array(res.bytes);
+  docByteSize = bytes.byteLength;
 
   if (state.doc) {
     try { await state.doc.destroy(); } catch { /* ignore */ }
@@ -472,16 +487,15 @@ function initChrome() {
       "PageUp":   () => goToPage(state.pageNumber - 1),
       "PageDown": () => goToPage(state.pageNumber + 1),
     },
+    showAuxPane: true,
     showStatusLine: true,
   });
   titleEl = chrome.title;
   viewportEl = chrome.viewport;
-
-  // Sidebar lives next to the viewport — grid handles positioning.
-  sidebarEl = document.createElement("aside");
-  sidebarEl.id = "sidebar";
+  sidebarEl = chrome.aux!;
   sidebarEl.setAttribute("aria-label", "Pages");
-  document.body.appendChild(sidebarEl);
+  infoEl = chrome.statusInfo!;
+  stateEl = chrome.statusState!;
 
   // Pages container + empty / error states inside the viewport.
   pagesEl = document.createElement("div");
@@ -505,12 +519,6 @@ function initChrome() {
   `;
   viewportEl.appendChild(errorDiv);
   errorName = errorDiv.querySelector("#error-name") as HTMLElement;
-
-  // Status line: a single right-aligned mono position counter.
-  positionEl = document.createElement("span");
-  positionEl.id = "status-position";
-  positionEl.classList.add("right", "mono");
-  chrome.statusLine!.appendChild(positionEl);
 
   // The IntersectionObserver for lazy page rendering needs viewportEl as its
   // root. We set it up here once viewportEl is known.
@@ -550,9 +558,9 @@ async function boot() {
 
   try {
     const saved = await invoke<AppState | null>("load_state");
-    applySidebarVisibility(saved?.panel_visible ?? true);
+    applyAuxVisibility(saved?.panel_visible ?? true);
   } catch {
-    applySidebarVisibility(true);
+    applyAuxVisibility(true);
   }
 
   let opened = false;

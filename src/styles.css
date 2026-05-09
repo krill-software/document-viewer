@@ -1,49 +1,14 @@
-/* document-viewer — app-specific styles. Palette + chrome + menu + status
- * line + kbd come from @krill-software/desktop-ui (imported in main.ts). */
+/* document-viewer — app-specific styles. Body grid, palette, chrome,
+ * status-line halves, and dirty marker all come from
+ * @krill-software/desktop-ui via the imported styles bundle. */
 
-/* Body grid: titlebar / [sidebar?] [viewport] / status line. */
-
-body {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    "title"
-    "main"
-    "status";
-}
-body[data-state="document"][data-sidebar="visible"] {
-  grid-template-columns: auto 1fr;
-  grid-template-areas:
-    "title  title"
-    "side   main"
-    "status status";
-}
-body:not([data-state="document"][data-sidebar="visible"]) #sidebar { display: none; }
-
-#titlebar     { grid-area: title;  }
-#sidebar      { grid-area: side;   }
-#viewport     { grid-area: main;   }
-#status-line  { grid-area: status; }
-
-/* Fullscreen — package hides titlebar + status line; we hide the sidebar
- * and collapse the grid to a single area. */
-body[data-fullscreen="true"] #sidebar { display: none; }
-body[data-fullscreen="true"] {
-  grid-template-columns: 1fr;
-  grid-template-areas: "main";
-  grid-template-rows: 1fr;
-}
-
-/* Viewport ============================================================== */
+/* Viewport (main pane) ============================================== */
 
 #viewport {
   position: relative;
   background: var(--fm-bg);
   overflow-y: auto;
   overflow-x: hidden;
-  min-height: 0;
-
   scrollbar-width: thin;
   scrollbar-color: var(--fm-rule-strong) transparent;
 }
@@ -139,28 +104,11 @@ body:not([data-state="error"]) #error-state { display: none; }
   color: var(--fm-muted);
 }
 
-/* Sidebar (page thumbnails) =========================================== */
+/* Aux pane — thumbnails (replaces the legacy #sidebar styles). The
+ * package owns the pane geometry; we style only the thumbnail content. */
 
-#sidebar {
-  width: 156px;
-  overflow: auto;
-  background: var(--fm-bg);
-  border-right: 1px solid var(--fm-rule);
+#aux {
   padding: 8px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--fm-rule-strong) transparent;
-}
-#sidebar::-webkit-scrollbar { width: 8px; }
-#sidebar::-webkit-scrollbar-track { background: transparent; }
-#sidebar::-webkit-scrollbar-thumb {
-  background: var(--fm-rule-strong);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-#sidebar::-webkit-scrollbar-thumb:hover {
-  background: var(--fm-muted);
-  background-clip: content-box;
 }
 
 .thumb {
