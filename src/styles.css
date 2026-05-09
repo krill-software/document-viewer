@@ -84,25 +84,8 @@
 }
 
 body:not([data-state="document"]) #pages { display: none; }
-body:not([data-state="empty"]) #empty-state { display: none; }
-body:not([data-state="error"]) #error-state { display: none; }
-
-#empty-state, #error-state {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  color: var(--fm-muted);
-  font-size: 14px;
-  padding: 0 32px;
-  pointer-events: none;
-}
-#empty-state p, #error-state p { margin: 4px 0; }
-#empty-state .hint, #error-state .hint {
-  font-size: 12px;
-  color: var(--fm-muted);
-}
+/* Empty / error placeholders are package-styled (.krill-empty-state /
+ * .krill-error-state); their hidden attribute is toggled by setDisplay(). */
 
 /* Aux pane — thumbnails (replaces the legacy #sidebar styles). The
  * package owns the pane geometry; we style only the thumbnail content. */

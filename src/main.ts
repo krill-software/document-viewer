@@ -1,5 +1,5 @@
 import "@krill-software/desktop-ui/styles";
-import { mountChrome } from "@krill-software/desktop-ui";
+import { mountChrome, buildEmptyState, buildErrorState, type ErrorStateRefs } from "@krill-software/desktop-ui";
 
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -32,7 +32,8 @@ let stateEl: HTMLElement;    // status-state (page position)
 let viewportEl: HTMLElement;
 let pagesEl: HTMLElement;
 let sidebarEl: HTMLElement;  // bound to chrome.aux
-let errorName: HTMLElement;
+let emptyEl: HTMLElement;
+let errorState: ErrorStateRefs;
 let docByteSize = 0;
 
 // ---- Doc state -------------------------------------------------------
@@ -55,8 +56,10 @@ const inFlight = new Map<number, pdfjsLib.RenderTask>();
 type Display = "empty" | "document" | "error";
 function setDisplay(s: Display) {
   document.body.dataset.state = s;
+  emptyEl.hidden = s !== "empty";
+  errorState.element.hidden = s !== "error";
   if (s !== "document") {
-    titleEl.textContent = "Document Viewer";
+    titleEl.textContent = "";
     infoEl.replaceChildren();
     stateEl.replaceChildren();
     teardownDocument();
@@ -381,7 +384,7 @@ function updateTitleBar(name: string) {
 }
 
 function showError(path: string) {
-  errorName.textContent = basename(path);
+  errorState.setFilename(basename(path));
   setDisplay("error");
 }
 
@@ -497,28 +500,20 @@ function initChrome() {
   infoEl = chrome.statusInfo!;
   stateEl = chrome.statusState!;
 
-  // Pages container + empty / error states inside the viewport.
+  // Pages container + empty / error placeholders inside the viewport.
   pagesEl = document.createElement("div");
   pagesEl.id = "pages";
   viewportEl.appendChild(pagesEl);
 
-  const emptyDiv = document.createElement("div");
-  emptyDiv.id = "empty-state";
-  emptyDiv.innerHTML = `
-    <p>No document open.</p>
-    <p class="hint">Drop a PDF here, or press <kbd>Ctrl</kbd>+<kbd>O</kbd>.</p>
-  `;
-  viewportEl.appendChild(emptyDiv);
+  emptyEl = buildEmptyState({
+    primary: "No document open.",
+    hint: 'Drop a PDF here, or press <kbd>Ctrl</kbd>+<kbd>O</kbd>.',
+  });
+  viewportEl.appendChild(emptyEl);
 
-  const errorDiv = document.createElement("div");
-  errorDiv.id = "error-state";
-  errorDiv.hidden = true;
-  errorDiv.innerHTML = `
-    <p>Can't open this PDF.</p>
-    <p class="hint" id="error-name"></p>
-  `;
-  viewportEl.appendChild(errorDiv);
-  errorName = errorDiv.querySelector("#error-name") as HTMLElement;
+  errorState = buildErrorState({ primary: "Can't open this PDF." });
+  errorState.element.hidden = true;
+  viewportEl.appendChild(errorState.element);
 
   // The IntersectionObserver for lazy page rendering needs viewportEl as its
   // root. We set it up here once viewportEl is known.
