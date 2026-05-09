@@ -43,6 +43,7 @@ Convention lives in [STYLE.md](../STYLE.md) → Naming.
 
 - **Shell:** Tauri 2 (Rust backend + system webview). Mirrors image-viewer.
 - **Frontend:** TypeScript + Vite.
+- **Chrome + palette:** [`@krill-software/desktop-ui`](https://github.com/krill-software/desktop-ui) (git dep). Provides the locked-palette CSS bundle, custom titlebar, menu bar, and status line via `mountChrome()`. The app's own `styles.css` only carries app-specific layout (viewport, sidebar, page rendering).
 - **PDF rendering:** [PDF.js](https://mozilla.github.io/pdf.js/) (Mozilla, Apache-2.0). Bundled into the frontend; the webview does all the rendering.
 - **File I/O:** Rust reads the PDF file, hands the bytes to the frontend via a Tauri command. Same channel for opening from CLI arg, drag-drop, or `Ctrl+O`.
 
