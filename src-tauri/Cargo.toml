@@ -21,7 +21,7 @@ tauri-plugin-cli = "2"
 tauri-plugin-fs = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-krill-desktop-core = { git = "ssh://git@github.com/krill-software/desktop-core.git", tag = "v0.1.0" }
+krill-desktop-core = { git = "https://github.com/krill-software/desktop-core", tag = "v0.1.0" }
 
 [profile.release]
 panic = "abort"
