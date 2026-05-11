@@ -1,0 +1,5 @@
+# Use the system `git` CLI (with the user's SSH keys configured for GitHub)
+# to fetch krill-desktop-core, since Cargo's built-in libgit2 client doesn't
+# pick up SSH agent / key configuration.
+[net]
+git-fetch-with-cli = true

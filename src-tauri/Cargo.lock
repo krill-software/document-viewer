@@ -1716,10 +1716,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "krill-desktop-core"
+version = "0.1.0"
+source = "git+ssh://git@github.com/krill-software/desktop-core.git?tag=v0.1.0#d976e02818a1d110ea0526b150e6215bb4eeeb51"
+dependencies = [
+ "dirs 5.0.1",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "krill-document-viewer"
 version = "0.1.0"
 dependencies = [
- "dirs 5.0.1",
+ "krill-desktop-core",
  "serde",
  "serde_json",
  "tauri",
