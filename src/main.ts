@@ -505,13 +505,10 @@ function initChrome() {
   pagesEl.id = "pages";
   viewportEl.appendChild(pagesEl);
 
-  emptyEl = buildEmptyState({
-    primary: "No document open.",
-    hint: 'Drop a PDF here, or press <kbd>Ctrl</kbd>+<kbd>O</kbd>.',
-  });
+  emptyEl = buildEmptyState();
   viewportEl.appendChild(emptyEl);
 
-  errorState = buildErrorState({ primary: "Can't open this PDF." });
+  errorState = buildErrorState({ message: "Couldn't open this PDF." });
   errorState.element.hidden = true;
   viewportEl.appendChild(errorState.element);
 
