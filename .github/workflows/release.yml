@@ -11,5 +11,6 @@ jobs:
     with:
       product-name: "Document Viewer"
       example-file: "paper.pdf"
+    secrets: inherit
     permissions:
       contents: write

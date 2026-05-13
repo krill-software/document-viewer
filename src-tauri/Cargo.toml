@@ -1,6 +1,6 @@
 [package]
 name = "krill-document-viewer"
-version = "0.2.0"
+version = "0.2.1"
 description = "A minimal document viewer for Linux"
 authors = ["Filip"]
 edition = "2021"

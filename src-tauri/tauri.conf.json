@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Document Viewer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "software.krill.document-viewer",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -55,7 +55,7 @@
       "icons/128x128@2x.png",
       "icons/icon.png"
     ],
-    "category": "Office",
+    "category": "Productivity",
     "shortDescription": "Document viewer",
     "longDescription": "A minimal, single-window document viewer for Linux. Open a PDF, read it. Quiet by design.",
     "fileAssociations": [
