@@ -1,4 +1,5 @@
 import "@krill-software/desktop-ui/styles";
+import "./styles.css";
 import { mountChrome, buildEmptyState, buildErrorState, showBootError, type ErrorStateRefs } from "@krill-software/desktop-ui";
 
 import { invoke } from "@tauri-apps/api/core";
