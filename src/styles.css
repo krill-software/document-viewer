@@ -2,6 +2,21 @@
  * status-line halves, and dirty marker all come from
  * @krill-software/desktop-ui via the imported styles bundle. */
 
+:root {
+  --fm-selection: rgba(221, 117, 150, 0.22); /* alpha-derived from --fm-accent */
+}
+
+::selection {
+  background: var(--fm-selection);
+  text-shadow: none;
+}
+
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "calt" 1, "liga" 1;
+}
+
 /* Viewport (main pane) ============================================== */
 
 #viewport {
