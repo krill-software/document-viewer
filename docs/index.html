@@ -26,3 +26,107 @@ features:
   - tag: Tauri · Rust · PDF.js
     title: Native Linux
     blurb: Small binary, AppImage and .deb, real .pdf file association, in-app updater. No Electron.
+principles_heading: What this isn't.
+principles:
+  - strong: No editing.
+    span: No annotations, highlights, comments, forms, or signatures. Read-only viewer.
+  - strong: No tabs.
+    span: One window per document. Open another window for another paper.
+  - strong: No outline panel.
+    span: Thumbnails only. The side panel is for "where am I," not "what's in the doc."
+  - strong: No settings panel.
+    span: Nothing meaningful to configure means no place to look for one.
+extension: ".pdf"
+---
+<style>
+  .dv-reader {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    min-height: 380px;
+  }
+  .dv-thumbs {
+    background: rgba(48, 52, 63, 0.03);
+    border-right: 1px solid var(--rule);
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .dv-thumb {
+    width: 86px;
+    height: 110px;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(48, 52, 63, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .dv-thumb.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(221, 117, 150, 0.18);
+    color: var(--accent);
+  }
+  .dv-page-area {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(48, 52, 63, 0.02);
+  }
+  .dv-page {
+    width: 100%;
+    max-width: 440px;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    box-shadow: 0 8px 24px -12px rgba(48, 52, 63, 0.18);
+    padding: 36px 44px;
+    font-family: var(--serif);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .dv-page h4 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0 0 12px;
+  }
+  .dv-page p { margin: 0 0 10px; opacity: 0.88; }
+
+  @media (max-width: 720px) {
+    .dv-reader { grid-template-columns: 80px 1fr; }
+    .dv-thumb { width: 56px; height: 72px; }
+    .dv-page { padding: 24px; }
+  }
+</style>
+<div class="pv-titlebar">
+  <span class="title">paper.pdf</span>
+  <span class="winbtns">─ ▢ ✕</span>
+</div>
+<div class="dv-reader">
+  <div class="dv-thumbs">
+    <div class="dv-thumb">1</div>
+    <div class="dv-thumb">2</div>
+    <div class="dv-thumb active">3</div>
+    <div class="dv-thumb">4</div>
+  </div>
+  <div class="dv-page-area">
+    <div class="dv-page">
+      <h4>3. Method</h4>
+      <p>We adopt a continuous-scroll layout in which all pages stack vertically and render lazily as they enter the viewport. The active page is derived from scroll position, not stored as a separate cursor.</p>
+      <p>Thumbnails render at low DPR into the side rail. The first twenty are produced eagerly; the rest fill in as the rail is scrolled.</p>
+    </div>
+  </div>
+</div>
+<div class="pv-status">
+  <span>PDF · 184 KB · 14 pages</span>
+  <span>3 / 14</span>
+</div>
