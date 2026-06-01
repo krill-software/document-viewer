@@ -76,8 +76,8 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 
 ### File I/O
 - **Open:** drag-drop onto window, CLI arg (`krill-document-viewer paper.pdf`), `Ctrl+O` dialog.
-- **Recent files:** last 10, persisted in XDG state, reachable via `Ctrl+R` or a small recents submenu in the titlebar menu.
 - **No save, no export.** Read-only viewer.
+- **No recent-files menu** in v1 — deferred. Re-opening a PDF goes through the file manager / CLI / drag-drop.
 
 ### Side panel (thumbnails)
 - Vertical strip on the left, ~140 px wide.
@@ -97,9 +97,9 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 ### Navigation
 - `←` / `→` or `PgUp` / `PgDn` smooth-scroll to the previous / next page.
 - `Home` / `End` smooth-scroll to the first / last page.
-- `Ctrl+G` opens a small inline "Go to page" input (single field, enter to confirm). The only inline modal in v1.
 - Clicking a sidebar thumbnail smooth-scrolls the main view to that page.
 - The status line and the sidebar's active-page highlight follow the scroll position; they're observed state, not driven state.
+- **No `Ctrl+G` go-to-page** in v1 — deferred. Arrow keys and the sidebar handle position changes.
 
 ### Viewport
 - **Fit-to-width** is the default on every document load.
@@ -112,12 +112,12 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 
 ### What the titlebar shows
 - Centered: filename.
-- Standard min/max/close on the right.
+- Standard menu (left) + min/max/close (right). Provided by `@krill-software/desktop-ui`.
 
 ### What the status line shows
-- A thin footer (~24px) along the bottom of the window.
-- Right-aligned: `current / total` (e.g. `7 / 142`), plus zoom % when not at fit-to-width.
-- Hidden in fullscreen.
+- Provided by `@krill-software/desktop-ui` (34px, JetBrains Mono, 12px). Hidden in fullscreen.
+- **Left (`statusInfo`)**: the app version, formatted `vX.Y.Z`. Suite convention — see krill STYLE.md → Status line.
+- **Right (`statusState`)**: `current / total · zoom%` (e.g. `7 / 142 · 124%`). At fit-to-width, the zoom segment reads `100% (fit)` or whatever the fit scale resolves to, suffixed `(fit)`.
 
 ## UX principles
 
@@ -129,9 +129,8 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 
 ## Window chrome
 
-- Custom titlebar (matches image-viewer / image-editor: drag region + min/max/close, inline menu).
+- Titlebar + status line: 44px / 34px, provided by `@krill-software/desktop-ui` (don't redeclare).
 - Window background: palette `--fm-bg`. Thumbnail panel: `--fm-bg` with a 1px `--fm-rule` divider on the right. Current-thumb border: `--fm-accent`.
-- Status line at the bottom (~24px), Ghost White with a 1px `--fm-rule` top border, right-aligned `current / total` page indicator in `--fm-muted` mono.
 - Default window: 1200 × 820, min 720 × 540 (smaller than that and the side panel + page can't both breathe).
 
 ## Keybindings (v1)
@@ -139,24 +138,24 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 | Action | Key |
 |---|---|
 | Open | `Ctrl+O` |
-| Recent files | `Ctrl+R` |
 | Previous / next page | `←` / `→`, `PgUp` / `PgDn` |
 | First / last page | `Home` / `End` |
-| Go to page (inline) | `Ctrl+G` |
 | Toggle thumbnail panel | `Ctrl+\` |
 | Zoom in / out | `Ctrl+=` / `Ctrl+-` |
+| Wheel-zoom | `Ctrl + scroll` |
 | Fit to width | `Ctrl+0` |
 | Actual size (100%) | `Ctrl+1` |
-| Fullscreen | `F` or `F11` |
-| Close window | `Ctrl+W` |
+| Fullscreen | `F11` (or via View menu) |
 | Quit | `Ctrl+Q` |
+
+Shortcuts not in this list (`Ctrl+G` go-to-page, `Ctrl+R` recents, `Ctrl+W` close window, `F` toggle-fullscreen) were considered and deferred for v1.
 
 ## File handling
 
 - **Formats in (v1):** PDF only.
 - **External changes:** not watched in v1. Reopen the file to pick up edits.
 - **Symlinks:** followed.
-- **Encrypted PDFs:** prompt for password inline (single field at the top of the main view); no password-saving in v1.
+- **Encrypted PDFs:** **not supported in v1.** Opening one shows an error state reading "Encrypted PDFs aren't supported yet." with the filename. A password prompt is deferred.
 
 ## Linux integration
 
@@ -164,7 +163,7 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 - `.desktop` file with MIME types: `application/pdf`.
 - Registered as a candidate handler, not the default — users opt in via "Open with…".
 - Config: `$XDG_CONFIG_HOME/krill-document-viewer/config.toml` (empty in v1).
-- State: `$XDG_STATE_HOME/krill-document-viewer/` — window geometry, recent files, last-known thumbnail-panel visibility.
+- State: `$XDG_STATE_HOME/krill-document-viewer/` — window geometry and last-known thumbnail-panel visibility.
 - Distribution: AppImage primary; `.deb` secondary.
 
 ## v2 — Word documents
@@ -192,8 +191,9 @@ The v1 SPEC stays clean for PDF; v2 will get its own SPEC supplement when we get
 
 ## Milestones
 
-1. **M1 — Skeleton + display.** Tauri app launches, opens a PDF via CLI arg / drag-drop / `Ctrl+O`, renders the first page fit-to-width in the custom-titlebar shell. No thumbnails, no navigation yet.
-2. **M2 — Page navigation.** Arrow keys, `PgUp`/`PgDn`, `Home`/`End`, titlebar position indicator (`7 / 142`), `Ctrl+G` go-to-page.
-3. **M3 — Thumbnail panel.** Side rail with lazy-rendered thumbnails, click-to-jump, current-page highlight, `Ctrl+\` toggle, persisted visibility.
-4. **M4 — Zoom + fullscreen.** `Ctrl+=` / `Ctrl+-` / `Ctrl+0` / `Ctrl+1`, wheel-zoom, fit-to-width vs 100%, `F` / `F11` chrome-free mode, zoom % in titlebar.
-5. **M5 — Recents + packaging.** Recent-files list in XDG state, `Ctrl+R` menu, `.desktop`, MIME association, AppImage + `.deb`, GitHub Actions release workflow, landing page. Mirror image-editor's `scripts/publish.sh`.
+1. **M1 — Skeleton + display.** Done. Tauri app launches, opens PDFs, renders the first page fit-to-width.
+2. **M2 — Page navigation.** Done. Arrow keys, `PgUp`/`PgDn`, `Home`/`End`, position indicator. (`Ctrl+G` go-to-page deferred.)
+3. **M3 — Thumbnail panel.** Done. Lazy-rendered side rail, click-to-jump, current-page highlight, `Ctrl+\` toggle, persisted visibility.
+4. **M4 — Zoom + fullscreen.** Done. `Ctrl+=` / `Ctrl+-` / `Ctrl+0` / `Ctrl+1`, wheel-Ctrl zoom, fit-to-width vs scale, `F11` fullscreen, zoom % in status line.
+5. **M5 — Packaging.** Done. `.desktop`, MIME association, AppImage + `.deb`, shared release workflow.
+6. **M6 — Suite convention pass.** Done. Version in statusInfo, status combined as `page · zoom`, encrypted-PDF "not implemented" error.

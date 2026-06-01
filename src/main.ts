@@ -21,7 +21,6 @@ interface DocumentRead {
 
 interface AppState {
   window?: { width: number; height: number; x: number; y: number };
-  recent?: string[];
   panel_visible?: boolean;
 }
 
@@ -35,17 +34,34 @@ let pagesEl: HTMLElement;
 let sidebarEl: HTMLElement;  // bound to chrome.aux
 let emptyEl: HTMLElement;
 let errorState: ErrorStateRefs;
-let docByteSize = 0;
-
 // ---- Doc state -------------------------------------------------------
+
+type Zoom = { kind: "fit" } | { kind: "scale"; value: number };
 
 interface DocState {
   doc: pdfjsLib.PDFDocumentProxy | null;
   path: string;
   pageNumber: number;
   totalPages: number;
+  zoom: Zoom;
+  /** First-page CSS-pixel width at scale=1 — cached for zoom math so
+   *  every page is sized off the same base in scale mode. PDFs with
+   *  per-page-varying widths get the first-page baseline; acceptable
+   *  for v1. */
+  basePageWidth: number;
 }
-const state: DocState = { doc: null, path: "", pageNumber: 1, totalPages: 0 };
+const state: DocState = {
+  doc: null,
+  path: "",
+  pageNumber: 1,
+  totalPages: 0,
+  zoom: { kind: "fit" },
+  basePageWidth: 612, // letter @ 72dpi
+};
+
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 8;
+const ZOOM_STEP = 1.2;
 
 let pageRows: HTMLElement[] = [];
 const pageAspect = new Map<number, number>();
@@ -61,16 +77,10 @@ function setDisplay(s: Display) {
   errorState.element.hidden = s !== "error";
   if (s !== "document") {
     titleEl.textContent = "";
-    infoEl.replaceChildren();
+    // statusInfo (version) is static across the session — don't clear it.
     stateEl.replaceChildren();
     teardownDocument();
   }
-}
-
-function formatBytes(n: number): string {
-  if (n < 1024) return `${n} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function basename(path: string): string {
@@ -96,6 +106,7 @@ async function buildPages(doc: pdfjsLib.PDFDocumentProxy): Promise<void> {
     const v = p1.getViewport({ scale: 1 });
     defaultAspect = v.width / v.height;
     pageAspect.set(1, defaultAspect);
+    state.basePageWidth = v.width;
   } catch { /* keep default */ }
 
   for (let i = 1; i <= doc.numPages; i++) {
@@ -120,8 +131,21 @@ function teardownDocument() {
   pagesEl?.replaceChildren();
 }
 
-function targetCssWidth(): number {
+/** Width the viewport can give a page when fitting it. */
+function fitCssWidth(): number {
   return Math.max(160, viewportEl.clientWidth - 32);
+}
+
+/** Effective scale: CSS px per PDF point. In fit mode, derived from
+ *  the viewport width and the first-page base width. */
+function currentScale(): number {
+  if (state.zoom.kind === "scale") return state.zoom.value;
+  return fitCssWidth() / state.basePageWidth;
+}
+
+/** Per-page CSS width given the current zoom. */
+function targetCssWidth(): number {
+  return state.basePageWidth * currentScale();
 }
 
 function sizeRowToViewport(row: HTMLElement) {
@@ -230,6 +254,50 @@ function rerenderAll() {
   for (const n of toRerender) void renderPage(n);
 }
 
+// ---- Zoom ------------------------------------------------------------
+
+function setZoom(z: Zoom) {
+  state.zoom = z;
+  rerenderAll();
+  updateZoomStatus();
+}
+
+function zoomFit() {
+  setZoom({ kind: "fit" });
+}
+
+function zoomActual() {
+  setZoom({ kind: "scale", value: 1.0 });
+}
+
+function zoomBy(factor: number) {
+  // Promote fit → scale at the current effective scale, then bump.
+  const next = Math.min(
+    ZOOM_MAX,
+    Math.max(ZOOM_MIN, currentScale() * factor),
+  );
+  setZoom({ kind: "scale", value: next });
+}
+
+function updateZoomStatus() {
+  if (!state.doc) return;
+  const pct = Math.round(currentScale() * 100);
+  const zoomLabel = state.zoom.kind === "fit" ? `${pct}% (fit)` : `${pct}%`;
+  stateEl.textContent = `${state.pageNumber} / ${state.totalPages} · ${zoomLabel}`;
+}
+
+function installWheelZoom() {
+  viewportEl.addEventListener(
+    "wheel",
+    (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1);
+    },
+    { passive: false },
+  );
+}
+
 // ---- Active-page tracking -------------------------------------------
 
 let scrollRaf = 0;
@@ -252,7 +320,7 @@ function recomputeActivePage() {
   if (bestN !== state.pageNumber) {
     state.pageNumber = bestN;
     setSidebarActive(bestN);
-    stateEl.textContent = `${bestN} / ${state.totalPages}`;
+    updateZoomStatus();
   }
 }
 
@@ -375,16 +443,19 @@ async function toggleSidebar(): Promise<void> {
 
 function updateTitleBar(name: string) {
   titleEl.textContent = name;
-  // Status line halves: identity (left), position (right).
-  infoEl.textContent = `PDF · ${formatBytes(docByteSize)} · ${state.totalPages} ${state.totalPages === 1 ? "page" : "pages"}`;
-  stateEl.textContent = `${state.pageNumber} / ${state.totalPages}`;
+  // statusInfo (left): version, per STYLE.md convention.
+  // statusState (right): current page · zoom, updated by updateZoomStatus.
   stateEl.classList.add("mono");
+  updateZoomStatus();
   const title = `${name} — Document Viewer`;
   document.title = title;
   getCurrentWindow().setTitle(title).catch(() => {});
 }
 
 function showError(path: string) {
+  // Reset the message in case a prior encrypted-PDF error overrode it.
+  const msgEl = errorState.element.querySelector(".message") as HTMLElement | null;
+  if (msgEl) msgEl.textContent = "Couldn't open this PDF.";
   errorState.setFilename(basename(path));
   setDisplay("error");
 }
@@ -400,7 +471,6 @@ async function openPath(path: string): Promise<void> {
   }
 
   const bytes = res.bytes instanceof Uint8Array ? res.bytes : new Uint8Array(res.bytes);
-  docByteSize = bytes.byteLength;
 
   if (state.doc) {
     try { await state.doc.destroy(); } catch { /* ignore */ }
@@ -412,7 +482,16 @@ async function openPath(path: string): Promise<void> {
   let doc: pdfjsLib.PDFDocumentProxy;
   try {
     doc = await pdfjsLib.getDocument({ data: bytes }).promise;
-  } catch (e) {
+  } catch (e: any) {
+    // PasswordException — encrypted PDFs not supported in v1.
+    if (e?.name === "PasswordException") {
+      console.warn("encrypted PDF:", res.path);
+      errorState.setFilename(basename(res.path));
+      const msgEl = errorState.element.querySelector(".message") as HTMLElement | null;
+      if (msgEl) msgEl.textContent = "Encrypted PDFs aren't supported yet.";
+      setDisplay("error");
+      return;
+    }
     console.error("pdf.js getDocument failed:", e);
     showError(res.path);
     return;
@@ -486,6 +565,10 @@ function initChrome() {
       "next":           () => goToPage(state.pageNumber + 1),
       "first":          () => goToPage(1),
       "last":           () => goToPage(state.totalPages),
+      "zoom-in":        () => zoomBy(ZOOM_STEP),
+      "zoom-out":       () => zoomBy(1 / ZOOM_STEP),
+      "zoom-fit":       zoomFit,
+      "zoom-actual":    zoomActual,
     },
     bindings: {
       "PageUp":   () => goToPage(state.pageNumber - 1),
@@ -501,6 +584,9 @@ function initChrome() {
   sidebarEl.setAttribute("aria-label", "Pages");
   infoEl = chrome.statusInfo!;
   stateEl = chrome.statusState!;
+
+  // statusInfo carries the app version (suite convention, STYLE.md).
+  infoEl.textContent = `v${__APP_VERSION__}`;
 
   // Pages container + empty / error placeholders inside the viewport.
   pagesEl = document.createElement("div");
@@ -548,6 +634,7 @@ window.addEventListener("resize", () => {
 async function boot() {
   initChrome();
   installFullscreenEscape();
+  installWheelZoom();
   await installFileDrop();
 
   try {

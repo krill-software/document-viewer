@@ -27,7 +27,6 @@ fn read_document(path: String) -> Result<DocumentRead, String> {
 #[derive(Debug, Serialize, Deserialize, Default)]
 struct AppState {
     window: Option<kstate::WindowGeometry>,
-    recent: Option<Vec<String>>,
     panel_visible: Option<bool>,
 }
 
