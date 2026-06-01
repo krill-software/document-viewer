@@ -27,6 +27,9 @@ features:
     title: Native Linux
     blurb: Small binary, AppImage and .deb, real .pdf file association, in-app updater. No Electron.
 extension: ".pdf"
+mock:
+  filename: paper.pdf
+  state: '3 / 14'
 ---
 <style>
   .dv-reader {
@@ -97,10 +100,6 @@ extension: ".pdf"
     .dv-page { padding: 24px; }
   }
 </style>
-<div class="pv-titlebar">
-  <span class="title">paper.pdf</span>
-  <span class="winbtns">─ ▢ ✕</span>
-</div>
 <div class="dv-reader">
   <div class="dv-thumbs">
     <div class="dv-thumb">1</div>
@@ -115,8 +114,4 @@ extension: ".pdf"
       <p>Thumbnails render at low DPR into the side rail. The first twenty are produced eagerly; the rest fill in as the rail is scrolled.</p>
     </div>
   </div>
-</div>
-<div class="pv-status">
-  <span>v0.2.4</span>
-  <span>3 / 14</span>
 </div>
