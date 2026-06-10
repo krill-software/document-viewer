@@ -151,6 +151,6 @@ body:not([data-state="document"]) #pages { display: none; }
 .thumb-label {
   text-align: center;
   font-size: 11px;
-  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-family: var(--fm-mono);
   margin-top: 4px;
 }
