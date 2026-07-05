@@ -1815,7 +1815,7 @@ dependencies = [
 
 [[package]]
 name = "krill-pdf-reader"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "krill-desktop-core",
  "serde",

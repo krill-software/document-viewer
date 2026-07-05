@@ -1,6 +1,6 @@
 [package]
 name = "krill-pdf-reader"
-version = "0.2.4"
+version = "0.2.5"
 description = "A minimal PDF reader for Linux"
 authors = ["Filip"]
 edition = "2021"
