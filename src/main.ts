@@ -13,7 +13,7 @@ import { TextLayer } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
-interface DocumentRead {
+interface PdfRead {
   path: string;
   bytes: number[] | Uint8Array;
   mime: string;
@@ -447,7 +447,7 @@ function updateTitleBar(name: string) {
   // statusState (right): current page · zoom, updated by updateZoomStatus.
   stateEl.classList.add("mono");
   updateZoomStatus();
-  const title = `${name} — Document Viewer`;
+  const title = `${name} — PDF Reader`;
   document.title = title;
   getCurrentWindow().setTitle(title).catch(() => {});
 }
@@ -461,11 +461,11 @@ function showError(path: string) {
 }
 
 async function openPath(path: string): Promise<void> {
-  let res: DocumentRead;
+  let res: PdfRead;
   try {
-    res = await invoke<DocumentRead>("read_document", { path });
+    res = await invoke<PdfRead>("read_pdf", { path });
   } catch (e) {
-    console.error("read_document failed:", e);
+    console.error("read_pdf failed:", e);
     showError(path);
     return;
   }
@@ -556,7 +556,7 @@ async function installFileDrop() {
 
 function initChrome() {
   const chrome = mountChrome({
-    productName: "Document Viewer",
+    productName: "PDF Reader",
     actions: {
       "open":           openViaDialog,
       "fullscreen":     toggleFullscreen,

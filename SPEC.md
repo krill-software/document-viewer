@@ -1,6 +1,6 @@
-# Document Viewer — Spec (v1)
+# PDF Reader — Spec (v1)
 
-A minimal, single-window Linux document viewer. Open a PDF, read it. Page thumbnails in a side panel. Step through pages with the keyboard. **The product is the calm** — the bar is `evince` minus the settings panel, not a Foxit-shaped power tool.
+A minimal, single-window Linux PDF reader. Open a PDF, read it. Page thumbnails in a side panel. Step through pages with the keyboard. **The product is the calm** — the bar is `evince` minus the settings panel, not a Foxit-shaped power tool.
 
 v1 reads PDFs. v2 adds Word.
 
@@ -8,14 +8,14 @@ v1 reads PDFs. v2 adds Word.
 
 | Where        | Value                                       |
 |--------------|---------------------------------------------|
-| Slug         | `document-viewer`                           |
-| Binary       | `krill-document-viewer`                     |
-| Cargo lib    | `krill_document_viewer_lib`                 |
-| productName  | `Document Viewer`                           |
-| Identifier   | `software.krill.document-viewer`            |
-| Directory    | `krill-software/document-viewer/`           |
-| Repo         | `krill-software/document-viewer`            |
-| State dir    | `$XDG_STATE_HOME/krill-document-viewer/`    |
+| Slug         | `pdf-reader`                                |
+| Binary       | `krill-pdf-reader`                          |
+| Cargo lib    | `krill_pdf_reader_lib`                      |
+| productName  | `PDF Reader`                                |
+| Identifier   | `software.krill.pdf-reader`                 |
+| Directory    | `krill-software/pdf-reader/`                |
+| Repo         | `krill-software/pdf-reader`                 |
+| State dir    | `$XDG_STATE_HOME/krill-pdf-reader/`         |
 | Lucide icon  | `file-text`                                 |
 
 Convention lives in [STYLE.md](https://github.com/krill-software/.github/blob/main/STYLE.md) → Naming.
@@ -75,7 +75,7 @@ Rationale: PDF.js is mature, has thumbnails support out of the box, no system de
 ## Features (v1)
 
 ### File I/O
-- **Open:** drag-drop onto window, CLI arg (`krill-document-viewer paper.pdf`), `Ctrl+O` dialog.
+- **Open:** drag-drop onto window, CLI arg (`krill-pdf-reader paper.pdf`), `Ctrl+O` dialog.
 - **No save, no export.** Read-only viewer.
 - **No recent-files menu** in v1 — deferred. Re-opening a PDF goes through the file manager / CLI / drag-drop.
 
@@ -159,11 +159,11 @@ Shortcuts not in this list (`Ctrl+G` go-to-page, `Ctrl+R` recents, `Ctrl+W` clos
 
 ## Linux integration
 
-- Binary name: `krill-document-viewer`.
+- Binary name: `krill-pdf-reader`.
 - `.desktop` file with MIME types: `application/pdf`.
 - Registered as a candidate handler, not the default — users opt in via "Open with…".
-- Config: `$XDG_CONFIG_HOME/krill-document-viewer/config.toml` (empty in v1).
-- State: `$XDG_STATE_HOME/krill-document-viewer/` — window geometry and last-known thumbnail-panel visibility.
+- Config: `$XDG_CONFIG_HOME/krill-pdf-reader/config.toml` (empty in v1).
+- State: `$XDG_STATE_HOME/krill-pdf-reader/` — window geometry and last-known thumbnail-panel visibility.
 - Distribution: AppImage primary; `.deb` secondary.
 
 ## v2 — Word documents

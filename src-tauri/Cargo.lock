@@ -1814,7 +1814,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "krill-document-viewer"
+name = "krill-pdf-reader"
 version = "0.2.4"
 dependencies = [
  "krill-desktop-core",

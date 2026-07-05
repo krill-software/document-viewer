@@ -4,20 +4,20 @@ use serde::{Deserialize, Serialize};
 
 use krill_desktop_core::{fs as kfs, state as kstate, dev as kdev, updater::BuilderExt};
 
-const SLUG: &str = "krill-document-viewer";
+const SLUG: &str = "krill-pdf-reader";
 
 #[derive(Debug, Serialize)]
-struct DocumentRead {
+struct PdfRead {
     path: String,
     bytes: Vec<u8>,
     mime: String,
 }
 
 #[tauri::command]
-fn read_document(path: String) -> Result<DocumentRead, String> {
+fn read_pdf(path: String) -> Result<PdfRead, String> {
     let p = Path::new(&path);
     let bytes = kfs::read_bytes(p)?;
-    Ok(DocumentRead {
+    Ok(PdfRead {
         path: kfs::absolute_path(p),
         bytes,
         mime: "application/pdf".to_string(),
@@ -53,7 +53,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .invoke_handler(tauri::generate_handler![
-            read_document,
+            read_pdf,
             load_state,
             save_state,
             dev_test_file,

@@ -1,6 +1,6 @@
-# Document Viewer
+# PDF Reader
 
-A minimal, single-window document viewer for Linux. Open a PDF, read it. Page thumbnails in a side panel. Step through pages with the keyboard.
+A minimal, single-window PDF reader for Linux. Open a PDF, read it. Page thumbnails in a side panel. Step through pages with the keyboard.
 
 Built on Tauri 2 (Rust + system webview) with a TypeScript frontend. PDF rendering via [PDF.js](https://mozilla.github.io/pdf.js/) inside the webview; Rust does only file I/O and state. See [SPEC.md](SPEC.md) for the design rationale.
 
@@ -27,7 +27,7 @@ v1 reads PDFs. v2 will add Word.
 ## Run from CLI
 
 ```sh
-krill-document-viewer path/to/paper.pdf
+krill-pdf-reader path/to/paper.pdf
 ```
 
 Without an arg, the app starts empty — drag-drop or `Ctrl+O` to load.

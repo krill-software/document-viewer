@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Document Viewer",
+  "productName": "PDF Reader",
   "version": "0.2.4",
-  "identifier": "software.krill.document-viewer",
+  "identifier": "software.krill.pdf-reader",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Document Viewer",
+        "title": "PDF Reader",
         "width": 1296,
         "height": 800,
         "minWidth": 720,
@@ -29,7 +29,7 @@
   },
   "plugins": {
     "cli": {
-      "description": "A minimal document viewer for Linux",
+      "description": "A minimal PDF reader for Linux",
       "args": [
         {
           "name": "file",
@@ -42,7 +42,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg3Nzg5QTc4MEExOTM4MjIKUldRaU9Ca0tlSnA0aDQzcXJLRWtKWTI0K0lDM3IwTW4wcGUzdFZ5RE01ckYraU5nL1FRZWRXRmgK",
       "endpoints": [
-        "https://github.com/krill-software/document-viewer/releases/latest/download/latest.json"
+        "https://github.com/krill-software/pdf-reader/releases/latest/download/latest.json"
       ]
     }
   },
@@ -59,8 +59,8 @@
       "icons/icon.png"
     ],
     "category": "Productivity",
-    "shortDescription": "Document viewer",
-    "longDescription": "A minimal, single-window document viewer for Linux. Open a PDF, read it. Quiet by design.",
+    "shortDescription": "PDF reader",
+    "longDescription": "A minimal, single-window PDF reader for Linux. Open a PDF, read it. Quiet by design.",
     "fileAssociations": [
       {
         "ext": [
