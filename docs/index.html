@@ -3,8 +3,6 @@ layout: app
 tagline: a minimal PDF reader for Linux
 description: A minimal PDF reader for Linux. Lazy page rendering, thumbnail rail, real text selection. No settings panel.
 og_description: Open a PDF. Read it. Nothing else.
-eyebrow: A PDF reader for Linux
-heading: "Open a PDF. <em>Read</em> it."
 lede: Continuous scroll, thumbnail rail, real text selection. The bar is evince minus the settings panel — not a Foxit-shaped power tool.
 features_heading: What you actually want from a reader.
 features:
@@ -38,7 +36,7 @@ mock:
     min-height: 380px;
   }
   .dv-thumbs {
-    background: rgba(48, 52, 63, 0.03);
+    background: rgba(var(--ink-rgb), 0.03);
     border-right: 1px solid var(--rule);
     padding: 12px 0;
     display: flex;
@@ -53,7 +51,7 @@ mock:
     background: var(--bg);
     border: 1px solid var(--rule);
     border-radius: 2px;
-    box-shadow: 0 2px 4px rgba(48, 52, 63, 0.04);
+    box-shadow: 0 2px 4px rgba(var(--ink-rgb), 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -72,7 +70,7 @@ mock:
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: rgba(48, 52, 63, 0.02);
+    background: rgba(var(--ink-rgb), 0.02);
   }
   .dv-page {
     width: 100%;
